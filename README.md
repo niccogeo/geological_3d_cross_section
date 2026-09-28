@@ -3,6 +3,9 @@
 QGIS plugin · **v0.1 (experimental)**  
 Author: **Niccolò Iandelli**, with the support of Claude · info@ambientegis.com
 
+
+[![Buy Me A Coffee](https://img.shields.io/badge/Buy%20me%20a%20coffee-niccogeo-FFDD00?logo=buymeacoffee&logoColor=black)](https://www.buymeacoffee.com/niccogeo)
+
 ---
 
 ## English
