@@ -2,11 +2,11 @@
 name=Geological 3D Cross Section
 qgisMinimumVersion=3.16
 description=Place a 2D geological cross-section into 3D space between two real-world points (A and B) / Posiziona una sezione geologica 2D nello spazio 3D tra due punti reali (A e B).
-version=1.0
+version=1.1
 author=Niccolò Iandelli (with the support of Claude)
 email=info@ambientegis.com
 
-about=EN: Geological 3D Cross Section places a 2D geological cross-section (polygon layer, drawn on the XY plane) into real-world 3D space. Pick point A (left end) and point B (right end) on the map: azimuth and horizontal scale are computed automatically. Then tilt the section around the A-B line, apply a fixed vertical exaggeration (x2, x2.5, x5, x10 or custom) and a Z offset. The section can come from the Geoscience plugin or be digitised from scanned raster sections; in both cases it must be geometrically correct and to scale. The output (PolygonZ) can be viewed with the QGIS 3D Map View or the Qgis2threejs plugin. Further developments are already in progress. --- IT: Geological 3D Cross Section posiziona una sezione geologica 2D (poligoni disegnati sul piano XY) nello spazio 3D reale. Scegli sulla mappa il punto A (estremo sinistro) e il punto B (estremo destro): azimuth e scala orizzontale sono calcolati automaticamente. Puoi poi inclinare la sezione attorno alla linea A-B, applicare un'esagerazione verticale fissa (x2, x2.5, x5, x10 o personalizzata) e un offset di quota Z. La sezione può derivare dal plugin Geoscience oppure essere disegnata a partire da sezioni scannerizzate in raster; in entrambi i casi deve essere geometricamente corretta e in scala. Il risultato (PolygonZ) si visualizza con la Vista Mappa 3D di QGIS o con il plugin Qgis2threejs. Altri sviluppi sono già in lavorazione.
+about=EN: Geological 3D Cross Section places a 2D geological cross-section (polygon layer, drawn on the XY plane) into real-world 3D space. Pick point A (left end) and point B (right end) on the map: azimuth and horizontal scale are computed automatically. Then tilt the section around the A-B line, apply a fixed vertical exaggeration (x2, x2.5, x5, x10 or custom) and a Z offset. The section can come from the Geoscience plugin or be digitised from scanned raster sections; in both cases it must be geometrically correct and to scale. The output (PolygonZ) can be viewed with the QGIS 3D Map View or the Qgis2threejs plugin. The interface can be switched between Italian and English from the Plugins menu. Further developments are already in progress. --- IT: Geological 3D Cross Section posiziona una sezione geologica 2D (poligoni disegnati sul piano XY) nello spazio 3D reale. Scegli sulla mappa il punto A (estremo sinistro) e il punto B (estremo destro): azimuth e scala orizzontale sono calcolati automaticamente. Puoi poi inclinare la sezione attorno alla linea A-B, applicare un'esagerazione verticale fissa (x2, x2.5, x5, x10 o personalizzata) e un offset di quota Z. La sezione può derivare dal plugin Geoscience oppure essere disegnata a partire da sezioni scannerizzate in raster; in entrambi i casi deve essere geometricamente corretta e in scala. Il risultato (PolygonZ) si visualizza con la Vista Mappa 3D di QGIS o con il plugin Qgis2threejs. L'interfaccia può essere cambiata tra italiano e inglese dal menu Plugin. Altri sviluppi sono già in lavorazione.
 
 tracker=https://github.com/niccogeo/geological_3d_cross_section/issues
 repository=https://github.com/niccogeo/geological_3d_cross_section
@@ -17,6 +17,12 @@ category=Vector
 tags=geology,cross section,3d,rotation,geologia,sezione,geoscience
 
 changelog=
+    1.1 - Selectable language and Qt6 compatibility / Lingua selezionabile e compatibilità Qt6
+        - Interface and help selectable in Italian or English (Plugins menu)
+        - Language follows QGIS on first run, then remembers the choice
+        - Clean error messages in the Processing dialog
+        - Fixed QAction import for Qt5 and Qt6
+        - Fixed enum access for QgsWkbTypes and QgsProcessingParameterNumber
     1.0 - First public release / Prima versione pubblica
         - Place a 2D section between points A and B picked on the map
         - Vertical tilt around the A-B line

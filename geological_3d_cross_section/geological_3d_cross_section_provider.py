@@ -1,5 +1,7 @@
 from qgis.core import QgsProcessingProvider
+
 from .geological_3d_cross_section_algorithm import Geological3DCrossSectionAlgorithm
+from .translations import tr
 
 
 class Geological3DCrossSectionProvider(QgsProcessingProvider):
@@ -8,7 +10,7 @@ class Geological3DCrossSectionProvider(QgsProcessingProvider):
         return "geological_3d_cross_section"
 
     def name(self):
-        return "Geological 3D Cross Section"
+        return tr("plugin_title")
 
     def icon(self):
         return QgsProcessingProvider.icon(self)

@@ -1,24 +1,25 @@
 """
-Geological 3D Cross Section - sezione 2D ancorata a due punti reali A (sinistra) e B (destra)
------------------------------------------------------------------------------
-Prende un layer di poligoni 2D che rappresenta una sezione (un asse locale
-esprime la distanza orizzontale lungo la sezione, l'altro la quota/elevazione)
-e la posiziona nello spazio 3D reale in modo che:
+Geological 3D Cross Section
+---------------------------
+Posiziona una sezione 2D (poligoni) nello spazio 3D reale ancorandola a due
+punti A (estremo sinistro) e B (estremo destro).
 
-- l'estremo sinistro della sezione coincida con il Punto A;
-- l'estremo destro della sezione coincida con il Punto B;
-- l'intera sezione venga eventualmente inclinata (angolo di rotazione
-  verticale) attorno alla linea A-B, come una cerniera;
-- un offset di quota (Z) sposti l'intera sezione su/giù.
+Un asse locale della sezione esprime la distanza orizzontale, l'altro la
+quota. La sezione viene posizionata in modo che:
 
-Azimuth e scala orizzontale vengono calcolati automaticamente dalla
-distanza e direzione reale tra A e B: non serve inserirli a mano.
+- l'estremo sinistro coincida con il Punto A;
+- l'estremo destro coincida con il Punto B;
+- possa essere inclinata attorno alla linea A-B (angolo di rotazione);
+- la quota possa essere esagerata (esagerazione verticale) e traslata (offset Z).
+
+Azimuth e scala orizzontale sono calcolati da A e B.
 """
 
 import math
 
 from qgis.core import (
     QgsProcessingAlgorithm,
+    QgsProcessingException,
     QgsProcessingParameterVectorLayer,
     QgsProcessingParameterEnum,
     QgsProcessingParameterNumber,
@@ -33,6 +34,8 @@ from qgis.core import (
     QgsPoint,
 )
 
+from .translations import tr
+
 
 class Geological3DCrossSectionAlgorithm(QgsProcessingAlgorithm):
     INPUT = "INPUT"
@@ -45,59 +48,53 @@ class Geological3DCrossSectionAlgorithm(QgsProcessingAlgorithm):
     ZOFFSET = "ZOFFSET"
     OUTPUT = "OUTPUT"
 
-    ASSI = [
-        "X esprime la distanza lungo la sezione (Y è la quota)",
-        "Y esprime la distanza lungo la sezione (X è la quota)",
-    ]
-
-    ESAGERAZIONI = ["x1 (nessuna)", "x2", "x2.5", "x5", "x10", "Personalizzata..."]
-    VALORI_ESAGERAZIONE = [1.0, 2.0, 2.5, 5.0, 10.0, None]
+    VALORI_ESAGERAZIONE = [1.0, 2.0, 2.5, 5.0, 10.0, None]  # None = personalizzata
 
     def initAlgorithm(self, config=None):
+        assi = [tr("axis_x"), tr("axis_y")]
+        esagerazioni = [
+            tr("exag_none"),
+            "x2",
+            "x2.5",
+            "x5",
+            "x10",
+            tr("exag_custom"),
+        ]
+
         self.addParameter(
-            QgsProcessingParameterVectorLayer(self.INPUT, "Sezione 2D (poligoni)")
+            QgsProcessingParameterVectorLayer(self.INPUT, tr("p_input"))
         )
         self.addParameter(
             QgsProcessingParameterEnum(
                 self.ASSE_ORIZZONTALE,
-                "Asse orizzontale della sezione nel layer originale",
-                options=self.ASSI,
+                tr("p_axis"),
+                options=assi,
                 defaultValue=0,
             )
         )
-        self.addParameter(
-            QgsProcessingParameterPoint(
-                self.PUNTO_A, "Punto A (estremo sinistro della sezione)"
-            )
-        )
-        self.addParameter(
-            QgsProcessingParameterPoint(
-                self.PUNTO_B, "Punto B (estremo destro della sezione)"
-            )
-        )
+        self.addParameter(QgsProcessingParameterPoint(self.PUNTO_A, tr("p_point_a")))
+        self.addParameter(QgsProcessingParameterPoint(self.PUNTO_B, tr("p_point_b")))
         self.addParameter(
             QgsProcessingParameterNumber(
                 self.ANGOLO,
-                "Angolo di rotazione verticale attorno alla linea A-B "
-                "(gradi, 0 = sezione verticale, 90 = sezione sdraiata)",
-                type=QgsProcessingParameterNumber.Double,
+                tr("p_angle"),
+                type=QgsProcessingParameterNumber.Type.Double,
                 defaultValue=0.0,
             )
         )
         self.addParameter(
             QgsProcessingParameterEnum(
                 self.ESAGERAZIONE,
-                "Esagerazione verticale (applicata alla quota prima della rotazione)",
-                options=self.ESAGERAZIONI,
+                tr("p_exag"),
+                options=esagerazioni,
                 defaultValue=0,
             )
         )
         self.addParameter(
             QgsProcessingParameterNumber(
                 self.ESAGERAZIONE_VAL,
-                "Valore esagerazione personalizzata (usato solo se sopra è "
-                "selezionato 'Personalizzata...')",
-                type=QgsProcessingParameterNumber.Double,
+                tr("p_exag_val"),
+                type=QgsProcessingParameterNumber.Type.Double,
                 defaultValue=1.0,
                 optional=True,
             )
@@ -105,13 +102,13 @@ class Geological3DCrossSectionAlgorithm(QgsProcessingAlgorithm):
         self.addParameter(
             QgsProcessingParameterNumber(
                 self.ZOFFSET,
-                "Offset di quota Z (aggiunto dopo la rotazione)",
-                type=QgsProcessingParameterNumber.Double,
+                tr("p_zoffset"),
+                type=QgsProcessingParameterNumber.Type.Double,
                 defaultValue=0.0,
             )
         )
         self.addParameter(
-            QgsProcessingParameterFeatureSink(self.OUTPUT, "Sezione ruotata 3D")
+            QgsProcessingParameterFeatureSink(self.OUTPUT, tr("p_output"))
         )
 
     def processAlgorithm(self, parameters, context, feedback):
@@ -124,15 +121,12 @@ class Geological3DCrossSectionAlgorithm(QgsProcessingAlgorithm):
 
         esag_idx = self.parameterAsEnum(parameters, self.ESAGERAZIONE, context)
         esagerazione = self.VALORI_ESAGERAZIONE[esag_idx]
-        if esagerazione is None:  # "Personalizzata..."
+        if esagerazione is None:  # personalizzata
             esagerazione = self.parameterAsDouble(
                 parameters, self.ESAGERAZIONE_VAL, context
             )
             if esagerazione <= 0:
-                raise ValueError(
-                    "Il valore di esagerazione verticale personalizzata deve "
-                    "essere maggiore di zero."
-                )
+                raise QgsProcessingException(tr("err_exag"))
 
         crs = layer.sourceCrs()
         punto_a = self.parameterAsPoint(parameters, self.PUNTO_A, context, crs)
@@ -143,10 +137,7 @@ class Geological3DCrossSectionAlgorithm(QgsProcessingAlgorithm):
         dx, dy = bx - ax, by - ay
         lunghezza_reale = math.hypot(dx, dy)
         if lunghezza_reale == 0:
-            raise ValueError(
-                "Il Punto A e il Punto B coincidono: la sezione non ha una "
-                "direzione definita."
-            )
+            raise QgsProcessingException(tr("err_ab"))
         hx, hy = dx / lunghezza_reale, dy / lunghezza_reale  # versore A->B
 
         extent = layer.extent()
@@ -157,10 +148,7 @@ class Geological3DCrossSectionAlgorithm(QgsProcessingAlgorithm):
 
         larghezza_locale = u_max - u_min
         if larghezza_locale == 0:
-            raise ValueError(
-                "L'estensione della sezione lungo l'asse orizzontale scelto "
-                "è nulla: controlla il parametro 'Asse orizzontale'."
-            )
+            raise QgsProcessingException(tr("err_width"))
         scala = lunghezza_reale / larghezza_locale
 
         cos_a, sin_a = math.cos(angolo), math.sin(angolo)
@@ -186,7 +174,7 @@ class Geological3DCrossSectionAlgorithm(QgsProcessingAlgorithm):
             self.OUTPUT,
             context,
             fields,
-            QgsWkbTypes.MultiPolygon25D,
+            QgsWkbTypes.Type.MultiPolygon25D,
             crs,
         )
 
@@ -240,83 +228,16 @@ class Geological3DCrossSectionAlgorithm(QgsProcessingAlgorithm):
         return "place_section_3d"
 
     def displayName(self):
-        return "Place 2D section in 3D (points A/B)"
+        return tr("alg_name")
 
     def group(self):
-        return "Geologia"
+        return tr("group")
 
     def groupId(self):
-        return "geologia"
+        return "geology"
 
     def shortHelpString(self):
-        return """
-<h3>Geological 3D Cross Section</h3>
-
-<h4>Italiano</h4>
-<p>Posiziona una <b>sezione geologica 2D</b> (poligoni) nello spazio 3D reale
-tra due punti scelti sulla mappa: <b>A</b> (estremo sinistro) e
-<b>B</b> (estremo destro). Azimuth e scala orizzontale vengono calcolati
-automaticamente da A e B.</p>
-
-<p><b>Preparazione della sezione.</b> La sezione deve essere disegnata nel
-<b>piano XY</b>: un asse rappresenta la distanza orizzontale lungo la
-sezione, l'altro la quota. Può essere:</p>
-<ul>
-<li>una sezione realizzata con il plugin <b>Geoscience</b>;</li>
-<li>una sezione digitalizzata a partire da <b>sezioni scansionate in
-raster</b> (georiferite nel piano XY).</li>
-</ul>
-<p>In entrambi i casi la sezione deve essere <b>geometricamente corretta e in
-scala</b> (stessa unità di misura sui due assi). La distanza A-B dovrebbe
-corrispondere alla lunghezza reale della sezione: la larghezza viene
-adattata alla distanza A-B, mentre la quota no (se le due misure non
-coincidono la sezione risulterà deformata).</p>
-
-<p><b>Parametri.</b> Asse orizzontale del layer (X o Y) · Punto A e Punto B
-(selezionabili con un click sulla mappa) · Angolo di rotazione attorno alla
-linea A-B (0° = verticale, 90° = sdraiata) · Esagerazione verticale
-(x1, x2, x2.5, x5, x10 o personalizzata) · Offset di quota Z.</p>
-
-<p><b>Visualizzazione.</b> Il risultato è un layer poligonale con Z
-(PolygonZ), visualizzabile con la <b>Vista Mappa 3D di QGIS</b> oppure con il
-plugin <b>Qgis2threejs</b>.</p>
-
-<hr/>
-<h4>English</h4>
-<p>Places a <b>2D geological cross-section</b> (polygons) into real-world 3D
-space between two points picked on the map: <b>A</b> (left end) and
-<b>B</b> (right end). Azimuth and horizontal scale are computed automatically
-from A and B.</p>
-
-<p><b>Preparing the section.</b> The section must be drawn on the
-<b>XY plane</b>: one axis is the horizontal distance along the section, the
-other is elevation. It can be:</p>
-<ul>
-<li>a section created with the <b>Geoscience</b> plugin;</li>
-<li>a section digitised from <b>scanned raster sections</b> (georeferenced on
-the XY plane).</li>
-</ul>
-<p>In both cases the section must be <b>geometrically correct and to
-scale</b> (same unit on both axes). The A-B distance should match the real
-length of the section: the width is fitted to the A-B distance while
-elevation is not (if the two do not match, the section will be
-distorted).</p>
-
-<p><b>Parameters.</b> Horizontal axis of the layer (X or Y) · Point A and
-Point B (can be picked with a click on the map) · Rotation angle around the
-A-B line (0° = vertical, 90° = lying flat) · Vertical exaggeration
-(x1, x2, x2.5, x5, x10 or custom) · Z offset.</p>
-
-<p><b>Visualisation.</b> The output is a polygon layer with Z (PolygonZ), which
-can be viewed with the <b>QGIS 3D Map View</b> or with the
-<b>Qgis2threejs</b> plugin.</p>
-
-<hr/>
-<p><i>Author / Autore: Niccolò Iandelli, with the support of Claude ·
-info@ambientegis.com<br/>
-Further developments are already in progress / Altri sviluppi sono già in
-lavorazione.</i></p>
-"""
+        return tr("help")
 
     def createInstance(self):
         return Geological3DCrossSectionAlgorithm()
