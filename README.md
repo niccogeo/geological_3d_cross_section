@@ -1,6 +1,6 @@
 # Geological 3D Cross Section
 
-QGIS plugin · **v1.0**  
+QGIS plugin · **v1.1**  
 Author: **Niccolò Iandelli**, with the support of Claude · info@ambientegis.com
 
 [![Buy Me A Coffee](https://img.shields.io/badge/Buy%20me%20a%20coffee-niccogeo-FFDD00?logo=buymeacoffee&logoColor=black)](https://www.buymeacoffee.com/niccogeo)
@@ -23,6 +23,8 @@ Places a **2D geological cross-section** (polygon layer drawn on the XY plane) i
 
 **Where to find it.** Toolbar button, *Plugins → Geological 3D Cross Section*, or Processing Toolbox.
 
+**Language.** The interface and help can be switched between Italian and English from the *Plugins → Geological 3D Cross Section* menu. On first run the plugin follows the QGIS language.
+
 🚧 Further developments are already in progress.
 
 ## Italiano
@@ -40,6 +42,8 @@ Posiziona una **sezione geologica 2D** (poligoni disegnati sul piano XY) nello s
 **Visualizzazione.** Il risultato è un layer PolygonZ: usa la **Vista Mappa 3D di QGIS** oppure il plugin **Qgis2threejs**.
 
 **Dove si trova.** Pulsante in barra strumenti, *Plugin → Geological 3D Cross Section*, oppure Processing Toolbox.
+
+**Lingua.** Interfaccia e Help si possono cambiare tra italiano e inglese dal menu *Plugin → Geological 3D Cross Section*. Alla prima apertura il plugin segue la lingua di QGIS.
 
 🚧 Altri sviluppi sono già in lavorazione.
 
