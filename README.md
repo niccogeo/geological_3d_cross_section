@@ -7,51 +7,35 @@ Author: **Niccolò Iandelli**, with the support of Claude · info@ambientegis.co
 
 ---
 
-## English
+### English
+**Added**
+- **Viewer** option (QGIS 3D native / Qgis2threejs): for Qgis2threejs the section is leaned sideways by 0.2% of the elevation so that polygons are triangulated correctly. Geometries are also fixed (invalid geometries, duplicate vertices) before the transformation.
+- **Keep proportions (uniform scale)** option: elevation is multiplied by the same factor as the A-B distance. Use it when the scanned section was georeferenced at too small a scale (A-B much longer than the section width).
+- The section layer can contain **lines** as well as polygons.
+- Clear error if the section layer is in map coordinates instead of local coordinates.
+- Optional **DTM** parameter: the elevation of points A and B is read from the DTM (band 1) and the section is moved to that real elevation. Before, the section stayed at its local elevation while the DTM was at its real height in the 3D view.
+- The top profile of the section (topographic surface) is detected automatically at both ends; it can be set manually in the advanced parameters.
+- *Also fit at B* option: the difference between the DTM and the section profile at B is spread linearly along the section.
+- The processing log reports the DTM elevations, the local reference values and the difference at B.
 
-Places a **2D geological cross-section** (polygon layer drawn on the XY plane) into real-world 3D space between two points picked on the map: **A** (left end) and **B** (right end). Azimuth and horizontal scale are computed automatically.
+**Notes**
+- Without a DTM the behaviour is unchanged.
+- The DTM works best with vertical sections (angle 0°).
 
-**Options**
-- Point A / Point B (pick on the map or type coordinates)
-- Rotation angle around the A-B line (0° = vertical, 90° = lying flat)
-- Vertical exaggeration: x1, x2, x2.5, x5, x10 or custom
-- Z offset
-- Optional DTM: elevation of points A and B read from a raster, so the section sits at its real height
+### Italiano
+**Aggiunto**
+- Opzione **Visualizzatore** (Vista 3D nativa di QGIS / Qgis2threejs): per Qgis2threejs la sezione viene inclinata lateralmente dello 0,2% della quota così i poligoni vengono triangolati correttamente. Le geometrie vengono anche corrette (non valide, vertici duplicati) prima della trasformazione.
+- Opzione **Mantieni le proporzioni (scala uniforme)**: la quota viene moltiplicata per lo stesso fattore della distanza A-B. Da usare quando la sezione scansionata è stata georiferita in scala troppo piccola (A-B molto più lungo della larghezza della sezione).
+- Il layer della sezione può contenere **linee** oltre ai poligoni.
+- Errore chiaro se il layer della sezione è in coordinate di mappa invece che locali.
+- Parametro **DTM** facoltativo: la quota dei punti A e B viene letta dal DTM (banda 1) e la sezione viene portata a quella quota reale. Prima la sezione restava alla quota locale mentre il DTM stava alla sua altezza reale nella vista 3D.
+- Il profilo superiore della sezione (superficie topografica) viene riconosciuto in automatico ai due estremi; si può indicare a mano nei parametri avanzati.
+- Opzione *Adatta anche in B*: la differenza tra DTM e profilo della sezione in B viene distribuita linearmente lungo la sezione.
+- Il log di elaborazione riporta le quote del DTM, i valori locali di riferimento e la differenza in B.
 
-**Input section.** It can be created with the **Geoscience** plugin, or digitised from **scanned raster sections**. In both cases it must be **geometrically correct and to scale** (same unit on both axes). The A-B distance should match the real length of the section, otherwise it will be distorted horizontally.
-
-**DTM.** Select a DTM to read the elevation of A and B: the top profile of the section is placed at the DTM elevation at A. If it does not match at B too, the log reports the difference; *Also fit at B* spreads it along the section. Works best with vertical sections.
-
-**Visualisation.** The output is a PolygonZ layer: use the **QGIS 3D Map View** or the **Qgis2threejs** plugin.
-
-**Where to find it.** Toolbar button, *Plugins → Geological 3D Cross Section*, or Processing Toolbox.
-
-**Language.** The interface and help can be switched between Italian and English from the *Plugins → Geological 3D Cross Section* menu. On first run the plugin follows the QGIS language.
-
-🚧 Further developments are already in progress.
-
-## Italiano
-
-Posiziona una **sezione geologica 2D** (poligoni disegnati sul piano XY) nello spazio 3D reale tra due punti scelti sulla mappa: **A** (estremo sinistro) e **B** (estremo destro). Azimuth e scala orizzontale sono calcolati automaticamente.
-
-**Opzioni**
-- Punto A / Punto B (selezione sulla mappa o coordinate)
-- Angolo di rotazione attorno alla linea A-B (0° = verticale, 90° = sdraiata)
-- Esagerazione verticale: x1, x2, x2.5, x5, x10 o personalizzata
-- Offset di quota Z
-- DTM facoltativo: quota dei punti A e B letta da un raster, così la sezione sta alla sua altezza reale
-
-**Sezione di partenza.** Può essere realizzata con il plugin **Geoscience**, oppure disegnata a partire da **sezioni scannerizzate in raster**. In entrambi i casi deve essere **geometricamente corretta e in scala** (stessa unità sui due assi). La distanza A-B deve corrispondere alla lunghezza reale della sezione, altrimenti risulterà deformata in orizzontale.
-
-**DTM.** Seleziona un DTM per leggere la quota di A e B: il profilo superiore della sezione viene portato alla quota del DTM in A. Se non coincide anche in B, il log indica la differenza; *Adatta anche in B* la distribuisce lungo la sezione. Funziona al meglio con sezioni verticali.
-
-**Visualizzazione.** Il risultato è un layer PolygonZ: usa la **Vista Mappa 3D di QGIS** oppure il plugin **Qgis2threejs**.
-
-**Dove si trova.** Pulsante in barra strumenti, *Plugin → Geological 3D Cross Section*, oppure Processing Toolbox.
-
-**Lingua.** Interfaccia e Help si possono cambiare tra italiano e inglese dal menu *Plugin → Geological 3D Cross Section*. Alla prima apertura il plugin segue la lingua di QGIS.
-
-🚧 Altri sviluppi sono già in lavorazione.
+**Note**
+- Senza DTM il comportamento resta invariato.
+- Il DTM funziona al meglio con sezioni verticali (angolo 0°).
 
 ## License
 GPL-2.0-or-later
