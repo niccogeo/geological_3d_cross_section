@@ -63,6 +63,18 @@ coincidono la sezione risulterà deformata).</p>
 linea A-B (0° = verticale, 90° = sdraiata) · Esagerazione verticale
 (x1, x2, x2.5, x5, x10 o personalizzata) · Offset di quota Z.</p>
 
+<p><b>Quota da DTM (facoltativo).</b> Se indichi un <b>DTM</b>, la quota Z dei
+punti A e B viene letta dal DTM e la sezione viene portata a quella quota: il
+profilo superiore della sezione (la superficie topografica) in A coincide con
+il DTM in A. Senza DTM la sezione resta alla quota locale del layer (più l'offset
+Z). La quota locale del profilo superiore viene riconosciuta in automatico
+(punto più alto della sezione ai due estremi) e puoi forzarla nei parametri
+avanzati. Se il profilo della sezione non coincide con il DTM anche in B, il
+messaggio nel log indica la differenza; con l'opzione <i>Adatta anche in B</i>
+la differenza viene distribuita linearmente lungo la sezione (la sezione viene
+leggermente deformata in verticale). Il DTM funziona al meglio con sezioni
+verticali (angolo 0°).</p>
+
 <p><b>Visualizzazione.</b> Il risultato è un layer poligonale con Z
 (PolygonZ), visualizzabile con la <b>Vista Mappa 3D di QGIS</b> oppure con il
 plugin <b>Qgis2threejs</b>.</p>
@@ -102,6 +114,18 @@ distorted).</p>
 Point B (can be picked with a click on the map) · Rotation angle around the
 A-B line (0° = vertical, 90° = lying flat) · Vertical exaggeration
 (x1, x2, x2.5, x5, x10 or custom) · Z offset.</p>
+
+<p><b>Elevation from a DTM (optional).</b> If you select a <b>DTM</b>, the
+Z of points A and B is read from the DTM and the section is moved to that
+elevation: the top profile of the section (the topographic surface) at A
+matches the DTM at A. Without a DTM the section stays at the local elevation of
+the layer (plus the Z offset). The local elevation of the top profile is
+detected automatically (highest point of the section at both ends) and you can
+override it in the advanced parameters. If the section profile does not match
+the DTM at B as well, the log message reports the difference; with the
+<i>Also fit at B</i> option the difference is spread linearly along the section
+(the section is slightly stretched vertically). The DTM works best with
+vertical sections (angle 0°).</p>
 
 <p><b>Visualisation.</b> The output is a polygon layer with Z (PolygonZ), which
 can be viewed with the <b>QGIS 3D Map View</b> or with the
@@ -145,6 +169,42 @@ STRINGS = {
             "selezionato 'Personalizzata...')"
         ),
         "p_zoffset": "Offset di quota Z (aggiunto dopo la rotazione)",
+        "p_dtm": "DTM per la quota dei punti A e B (facoltativo)",
+        "p_ref_a": (
+            "Quota locale del profilo superiore in A (facoltativo, "
+            "altrimenti automatica)"
+        ),
+        "p_ref_b": (
+            "Quota locale del profilo superiore in B (facoltativo, "
+            "altrimenti automatica)"
+        ),
+        "p_fit_b": (
+            "Adatta anche in B alla quota del DTM (deforma la sezione "
+            "in verticale)"
+        ),
+        "log_dtm_ab": "DTM: quota in A = {za:.3f}, quota in B = {zb:.3f}",
+        "log_dtm_ref": (
+            "Profilo superiore della sezione (quota locale): in A = {ra:.3f}, "
+            "in B = {rb:.3f}"
+        ),
+        "log_dtm_base": "Spostamento verticale applicato dal DTM: {zbase:.3f}",
+        "log_dtm_mismatch": (
+            "Differenza tra DTM e profilo della sezione in B: {m:.3f} "
+            "(positivo = il DTM è più alto della sezione)"
+        ),
+        "log_dtm_fit": "La differenza in B è stata distribuita lungo la sezione.",
+        "log_dtm_tilt": (
+            "Attenzione: con una sezione inclinata il DTM è letto nei punti "
+            "A e B, ma il profilo superiore si sposta in orizzontale."
+        ),
+        "err_dtm_sample": (
+            "Il DTM non ha un valore valido nel punto {nome} "
+            "(fuori dall'estensione o senza dato)."
+        ),
+        "err_dtm_edge": (
+            "Non riesco a riconoscere il profilo superiore della sezione in "
+            "{nome}: indica la quota locale nei parametri avanzati."
+        ),
         "p_output": "Sezione ruotata 3D",
         "err_exag": (
             "Il valore di esagerazione verticale personalizzata deve "
@@ -186,6 +246,42 @@ STRINGS = {
             "selected above)"
         ),
         "p_zoffset": "Z offset (added after rotation)",
+        "p_dtm": "DTM for the elevation of points A and B (optional)",
+        "p_ref_a": (
+            "Local elevation of the top profile at A (optional, "
+            "otherwise automatic)"
+        ),
+        "p_ref_b": (
+            "Local elevation of the top profile at B (optional, "
+            "otherwise automatic)"
+        ),
+        "p_fit_b": (
+            "Also fit at B to the DTM elevation (stretches the section "
+            "vertically)"
+        ),
+        "log_dtm_ab": "DTM: elevation at A = {za:.3f}, elevation at B = {zb:.3f}",
+        "log_dtm_ref": (
+            "Top profile of the section (local elevation): at A = {ra:.3f}, "
+            "at B = {rb:.3f}"
+        ),
+        "log_dtm_base": "Vertical shift applied from the DTM: {zbase:.3f}",
+        "log_dtm_mismatch": (
+            "Difference between the DTM and the section profile at B: "
+            "{m:.3f} (positive = the DTM is higher than the section)"
+        ),
+        "log_dtm_fit": "The difference at B was spread along the section.",
+        "log_dtm_tilt": (
+            "Warning: with a tilted section the DTM is read at points A and "
+            "B, but the top profile moves horizontally."
+        ),
+        "err_dtm_sample": (
+            "The DTM has no valid value at point {nome} "
+            "(outside the extent or no data)."
+        ),
+        "err_dtm_edge": (
+            "Cannot detect the top profile of the section at {nome}: set "
+            "the local elevation in the advanced parameters."
+        ),
         "p_output": "Rotated 3D section",
         "err_exag": "The custom vertical exaggeration value must be greater than zero.",
         "err_ab": (
