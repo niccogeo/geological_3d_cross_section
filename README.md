@@ -1,6 +1,6 @@
 # Geological 3D Cross Section
 
-QGIS plugin · **v1.1**  
+QGIS plugin · **v1.2**  
 Author: **Niccolò Iandelli**, with the support of Claude · info@ambientegis.com
 
 [![Buy Me A Coffee](https://img.shields.io/badge/Buy%20me%20a%20coffee-niccogeo-FFDD00?logo=buymeacoffee&logoColor=black)](https://www.buymeacoffee.com/niccogeo)
@@ -16,8 +16,11 @@ Places a **2D geological cross-section** (polygon layer drawn on the XY plane) i
 - Rotation angle around the A-B line (0° = vertical, 90° = lying flat)
 - Vertical exaggeration: x1, x2, x2.5, x5, x10 or custom
 - Z offset
+- Optional DTM: elevation of points A and B read from a raster, so the section sits at its real height
 
 **Input section.** It can be created with the **Geoscience** plugin, or digitised from **scanned raster sections**. In both cases it must be **geometrically correct and to scale** (same unit on both axes). The A-B distance should match the real length of the section, otherwise it will be distorted horizontally.
+
+**DTM.** Select a DTM to read the elevation of A and B: the top profile of the section is placed at the DTM elevation at A. If it does not match at B too, the log reports the difference; *Also fit at B* spreads it along the section. Works best with vertical sections.
 
 **Visualisation.** The output is a PolygonZ layer: use the **QGIS 3D Map View** or the **Qgis2threejs** plugin.
 
@@ -36,8 +39,11 @@ Posiziona una **sezione geologica 2D** (poligoni disegnati sul piano XY) nello s
 - Angolo di rotazione attorno alla linea A-B (0° = verticale, 90° = sdraiata)
 - Esagerazione verticale: x1, x2, x2.5, x5, x10 o personalizzata
 - Offset di quota Z
+- DTM facoltativo: quota dei punti A e B letta da un raster, così la sezione sta alla sua altezza reale
 
 **Sezione di partenza.** Può essere realizzata con il plugin **Geoscience**, oppure disegnata a partire da **sezioni scannerizzate in raster**. In entrambi i casi deve essere **geometricamente corretta e in scala** (stessa unità sui due assi). La distanza A-B deve corrispondere alla lunghezza reale della sezione, altrimenti risulterà deformata in orizzontale.
+
+**DTM.** Seleziona un DTM per leggere la quota di A e B: il profilo superiore della sezione viene portato alla quota del DTM in A. Se non coincide anche in B, il log indica la differenza; *Adatta anche in B* la distribuisce lungo la sezione. Funziona al meglio con sezioni verticali.
 
 **Visualizzazione.** Il risultato è un layer PolygonZ: usa la **Vista Mappa 3D di QGIS** oppure il plugin **Qgis2threejs**.
 

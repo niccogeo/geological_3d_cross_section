@@ -3,6 +3,30 @@
 All notable changes to **Geological 3D Cross Section** are documented in this file.
 Tutte le modifiche rilevanti a **Geological 3D Cross Section** sono documentate in questo file.
 
+## [1.2] - 2026-11-05
+
+### English
+**Added**
+- Optional **DTM** parameter: the elevation of points A and B is read from the DTM (band 1) and the section is moved to that real elevation. Before, the section stayed at its local elevation while the DTM was at its real height in the 3D view.
+- The top profile of the section (topographic surface) is detected automatically at both ends; it can be set manually in the advanced parameters.
+- *Also fit at B* option: the difference between the DTM and the section profile at B is spread linearly along the section.
+- The processing log reports the DTM elevations, the local reference values and the difference at B.
+
+**Notes**
+- Without a DTM the behaviour is unchanged.
+- The DTM works best with vertical sections (angle 0°).
+
+### Italiano
+**Aggiunto**
+- Parametro **DTM** facoltativo: la quota dei punti A e B viene letta dal DTM (banda 1) e la sezione viene portata a quella quota reale. Prima la sezione restava alla quota locale mentre il DTM stava alla sua altezza reale nella vista 3D.
+- Il profilo superiore della sezione (superficie topografica) viene riconosciuto in automatico ai due estremi; si può indicare a mano nei parametri avanzati.
+- Opzione *Adatta anche in B*: la differenza tra DTM e profilo della sezione in B viene distribuita linearmente lungo la sezione.
+- Il log di elaborazione riporta le quote del DTM, i valori locali di riferimento e la differenza in B.
+
+**Note**
+- Senza DTM il comportamento resta invariato.
+- Il DTM funziona al meglio con sezioni verticali (angolo 0°).
+
 ## [1.1] - 2026-10-06
 
 ### English
