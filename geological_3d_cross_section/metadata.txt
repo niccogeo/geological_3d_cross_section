@@ -21,6 +21,9 @@ changelog=
         - Optional DTM: elevation read at points A and B, section moved to real elevation
         - Top profile of the section detected automatically (or set manually)
         - Option to also fit at B (vertical stretch) and log of the difference
+        - Option "Keep proportions (uniform scale)" for scans georeferenced at the wrong scale
+        - Viewer option (QGIS 3D native / Qgis2threejs) and automatic geometry fix to avoid wrong triangles
+        - Section layer can contain lines as well as polygons; clear error if the layer is in map coordinates
     1.1 - Selectable language and Qt6 compatibility / Lingua selezionabile e compatibilità Qt6
         - Interface and help selectable in Italian or English (Plugins menu)
         - Language follows QGIS on first run, then remembers the choice

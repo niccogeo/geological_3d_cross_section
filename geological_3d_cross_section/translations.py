@@ -56,7 +56,11 @@ raster</b> (georiferite nel piano XY).</li>
 scala</b> (stessa unità di misura sui due assi). La distanza A-B dovrebbe
 corrispondere alla lunghezza reale della sezione: la larghezza viene
 adattata alla distanza A-B, mentre la quota no (se le due misure non
-coincidono la sezione risulterà deformata).</p>
+coincidono la sezione risulterà deformata). Se la scansione è stata georiferita
+in scala troppo piccola (distanza A-B molto maggiore della larghezza della
+sezione), attiva <i>Mantieni le proporzioni (scala uniforme)</i>: anche la quota
+viene moltiplicata per lo stesso fattore della distanza (l'esagerazione
+verticale si applica in più).</p>
 
 <p><b>Parametri.</b> Asse orizzontale del layer (X o Y) · Punto A e Punto B
 (selezionabili con un click sulla mappa) · Angolo di rotazione attorno alla
@@ -74,6 +78,13 @@ messaggio nel log indica la differenza; con l'opzione <i>Adatta anche in B</i>
 la differenza viene distribuita linearmente lungo la sezione (la sezione viene
 leggermente deformata in verticale). Il DTM funziona al meglio con sezioni
 verticali (angolo 0°).</p>
+
+<p><b>Visualizzatore.</b> Scegli se userai la <i>Vista Mappa 3D di QGIS</i> o
+<i>Qgis2threejs</i>. Qgis2threejs triangola i poligoni in pianta, quindi una
+sezione perfettamente verticale dà triangoli sbagliati: scegliendolo, la sezione
+viene inclinata lateralmente di pochissimo (0,2% della quota, circa 0,1°).
+In ogni caso le geometrie vengono corrette (geometrie non valide, vertici
+duplicati) prima della trasformazione.</p>
 
 <p><b>Visualizzazione.</b> Il risultato è un layer poligonale con Z
 (PolygonZ), visualizzabile con la <b>Vista Mappa 3D di QGIS</b> oppure con il
@@ -108,7 +119,10 @@ the XY plane).</li>
 scale</b> (same unit on both axes). The A-B distance should match the real
 length of the section: the width is fitted to the A-B distance while
 elevation is not (if the two do not match, the section will be
-distorted).</p>
+distorted). If the scan was georeferenced at too small a scale (A-B distance
+much larger than the section width), enable <i>Keep proportions (uniform
+scale)</i>: elevation is multiplied by the same factor as the distance (the
+vertical exaggeration is applied on top).</p>
 
 <p><b>Parameters.</b> Horizontal axis of the layer (X or Y) · Point A and
 Point B (can be picked with a click on the map) · Rotation angle around the
@@ -126,6 +140,13 @@ the DTM at B as well, the log message reports the difference; with the
 <i>Also fit at B</i> option the difference is spread linearly along the section
 (the section is slightly stretched vertically). The DTM works best with
 vertical sections (angle 0°).</p>
+
+<p><b>Viewer.</b> Choose whether you will use the <i>QGIS 3D Map View</i> or
+<i>Qgis2threejs</i>. Qgis2threejs triangulates polygons in plan view, so a
+perfectly vertical section gives wrong triangles: if you choose it, the section
+is leaned sideways by a tiny amount (0.2% of the elevation, about 0.1°).
+In every case geometries are fixed (invalid geometries, duplicate vertices)
+before the transformation.</p>
 
 <p><b>Visualisation.</b> The output is a polygon layer with Z (PolygonZ), which
 can be viewed with the <b>QGIS 3D Map View</b> or with the
@@ -151,7 +172,7 @@ STRINGS = {
         # algoritmo
         "alg_name": "Posiziona sezione 2D in 3D (punti A/B)",
         "group": "Geologia",
-        "p_input": "Sezione 2D (poligoni)",
+        "p_input": "Sezione 2D (poligoni o linee)",
         "p_axis": "Asse orizzontale della sezione nel layer originale",
         "axis_x": "X esprime la distanza lungo la sezione (Y è la quota)",
         "axis_y": "Y esprime la distanza lungo la sezione (X è la quota)",
@@ -167,6 +188,21 @@ STRINGS = {
         "p_exag_val": (
             "Valore esagerazione personalizzata (usato solo se sopra è "
             "selezionato 'Personalizzata...')"
+        ),
+        "p_uniform": (
+            "Mantieni le proporzioni (scala uniforme): scala anche la quota "
+            "con lo stesso fattore della distanza A-B"
+        ),
+        "log_uniform": (
+            "Scala uniforme: fattore {scala:.4f} applicato anche alla quota "
+            "(esagerazione totale = {esag:.4f})"
+        ),
+        "p_viewer": "Visualizzatore 3D che userai",
+        "viewer_native": "Vista Mappa 3D di QGIS (nativa)",
+        "viewer_threejs": "Qgis2threejs (inclinazione laterale minima)",
+        "log_lean": (
+            "Qgis2threejs: inclinazione laterale minima dello {k:.2f}% "
+            "della quota."
         ),
         "p_zoffset": "Offset di quota Z (aggiunto dopo la rotazione)",
         "p_dtm": "DTM per la quota dei punti A e B (facoltativo)",
@@ -205,6 +241,17 @@ STRINGS = {
             "Non riesco a riconoscere il profilo superiore della sezione in "
             "{nome}: indica la quota locale nei parametri avanzati."
         ),
+        "err_geom_type": (
+            "Il layer della sezione deve contenere poligoni o linee "
+            "(trovato: {tipo})."
+        ),
+        "err_dtm_coords": (
+            "La quota locale del profilo superiore in {nome} è {valore:.0f}: "
+            "sembra una coordinata della mappa e non una quota. Il layer della "
+            "sezione deve essere in coordinate locali (asse orizzontale = "
+            "distanza lungo la sezione, asse verticale = quota). Se invece è "
+            "corretto, indica la quota locale nei parametri avanzati."
+        ),
         "p_output": "Sezione ruotata 3D",
         "err_exag": (
             "Il valore di esagerazione verticale personalizzata deve "
@@ -228,7 +275,7 @@ STRINGS = {
         "plugin_title": "Geological 3D Cross Section",
         "alg_name": "Place 2D section in 3D (points A/B)",
         "group": "Geology",
-        "p_input": "2D section (polygons)",
+        "p_input": "2D section (polygons or lines)",
         "p_axis": "Horizontal axis of the section in the source layer",
         "axis_x": "X is the distance along the section (Y is elevation)",
         "axis_y": "Y is the distance along the section (X is elevation)",
@@ -244,6 +291,20 @@ STRINGS = {
         "p_exag_val": (
             "Custom exaggeration value (only used if 'Custom...' is "
             "selected above)"
+        ),
+        "p_uniform": (
+            "Keep proportions (uniform scale): also scale elevation by the "
+            "same factor as the A-B distance"
+        ),
+        "log_uniform": (
+            "Uniform scale: factor {scale:.4f} also applied to elevation "
+            "(total exaggeration = {esag:.4f})"
+        ),
+        "p_viewer": "3D viewer you will use",
+        "viewer_native": "QGIS 3D Map View (native)",
+        "viewer_threejs": "Qgis2threejs (tiny sideways lean)",
+        "log_lean": (
+            "Qgis2threejs: tiny sideways lean of {k:.2f}% of the elevation."
         ),
         "p_zoffset": "Z offset (added after rotation)",
         "p_dtm": "DTM for the elevation of points A and B (optional)",
@@ -281,6 +342,17 @@ STRINGS = {
         "err_dtm_edge": (
             "Cannot detect the top profile of the section at {nome}: set "
             "the local elevation in the advanced parameters."
+        ),
+        "err_geom_type": (
+            "The section layer must contain polygons or lines "
+            "(found: {tipo})."
+        ),
+        "err_dtm_coords": (
+            "The local elevation of the top profile at {nome} is {valore:.0f}: "
+            "it looks like a map coordinate, not an elevation. The section "
+            "layer must be in local coordinates (horizontal axis = distance "
+            "along the section, vertical axis = elevation). If it is correct, "
+            "set the local elevation in the advanced parameters."
         ),
         "p_output": "Rotated 3D section",
         "err_exag": "The custom vertical exaggeration value must be greater than zero.",

@@ -33,6 +33,7 @@ from qgis.core import (
     QgsWkbTypes,
     QgsPolygon,
     QgsMultiPolygon,
+    QgsMultiLineString,
     QgsLineString,
     QgsPoint,
 )
@@ -54,6 +55,13 @@ def _advanced_flag():
         return QgsProcessingParameterDefinition.FlagAdvanced
 
 
+# oltre questo valore la 'quota' trovata è quasi certamente una coordinata di mappa
+LIMITE_QUOTA_LOCALE = 1e5
+
+# inclinazione laterale minima (frazione della quota) per Qgis2threejs
+LEAN_THREEJS = 0.002
+
+
 class Geological3DCrossSectionAlgorithm(QgsProcessingAlgorithm):
     INPUT = "INPUT"
     ASSE_ORIZZONTALE = "ASSE_ORIZZONTALE"
@@ -63,6 +71,8 @@ class Geological3DCrossSectionAlgorithm(QgsProcessingAlgorithm):
     REF_A = "REF_A"
     REF_B = "REF_B"
     FIT_B = "FIT_B"
+    UNIFORME = "UNIFORME"
+    VISUALIZZATORE = "VISUALIZZATORE"
     ANGOLO = "ANGOLO"
     ESAGERAZIONE = "ESAGERAZIONE"
     ESAGERAZIONE_VAL = "ESAGERAZIONE_VAL"
@@ -129,6 +139,19 @@ class Geological3DCrossSectionAlgorithm(QgsProcessingAlgorithm):
             )
         )
         self.addParameter(
+            QgsProcessingParameterBoolean(
+                self.UNIFORME, tr("p_uniform"), defaultValue=False
+            )
+        )
+        self.addParameter(
+            QgsProcessingParameterEnum(
+                self.VISUALIZZATORE,
+                tr("p_viewer"),
+                options=[tr("viewer_native"), tr("viewer_threejs")],
+                defaultValue=0,
+            )
+        )
+        self.addParameter(
             QgsProcessingParameterNumber(
                 self.ZOFFSET,
                 tr("p_zoffset"),
@@ -185,6 +208,29 @@ class Geological3DCrossSectionAlgorithm(QgsProcessingAlgorithm):
             raise QgsProcessingException(tr("err_dtm_sample").format(nome=nome))
         return float(valore)
 
+    @staticmethod
+    def _pulisci_poligoni(geom):
+        """Corregge la geometria e toglie i vertici duplicati.
+
+        Restituisce None se dopo la correzione non restano poligoni.
+        """
+        try:
+            if not geom.isGeosValid():
+                geom = geom.makeValid()
+            geom.removeDuplicateNodes()
+            parti = [
+                p
+                for p in geom.asGeometryCollection()
+                if "polygon" in QgsWkbTypes.displayString(p.wkbType()).lower()
+            ]
+        except Exception:
+            return geom
+        if not parti:
+            return None
+        if len(parti) == 1:
+            return parti[0]
+        return QgsGeometry.collectGeometry(parti)
+
     # ------------------------------------------------------------- algoritmo
     def processAlgorithm(self, parameters, context, feedback):
         layer = self.parameterAsVectorLayer(parameters, self.INPUT, context)
@@ -202,6 +248,17 @@ class Geological3DCrossSectionAlgorithm(QgsProcessingAlgorithm):
             )
             if esagerazione <= 0:
                 raise QgsProcessingException(tr("err_exag"))
+
+        # tipo di geometria del layer: poligoni oppure linee
+        tipo_layer = QgsWkbTypes.displayString(layer.wkbType())
+        if "polygon" in tipo_layer.lower():
+            modo_geom = "poligoni"
+            tipo_out = QgsWkbTypes.Type.MultiPolygon25D
+        elif "line" in tipo_layer.lower():
+            modo_geom = "linee"
+            tipo_out = QgsWkbTypes.Type.MultiLineString25D
+        else:
+            raise QgsProcessingException(tr("err_geom_type").format(tipo=tipo_layer))
 
         crs = layer.sourceCrs()
         punto_a = self.parameterAsPoint(parameters, self.PUNTO_A, context, crs)
@@ -226,7 +283,27 @@ class Geological3DCrossSectionAlgorithm(QgsProcessingAlgorithm):
             raise QgsProcessingException(tr("err_width"))
         scala = lunghezza_reale / larghezza_locale
 
+        # scala uniforme: la quota viene scalata come la distanza orizzontale
+        # (utile se la sezione è stata georiferita in scala troppo piccola)
+        uniforme = self.parameterAsBool(parameters, self.UNIFORME, context)
+        if uniforme:
+            esagerazione = esagerazione * scala
+            feedback.pushInfo(
+                tr("log_uniform").format(scala=scala, esag=esagerazione)
+            )
+
         cos_a, sin_a = math.cos(angolo), math.sin(angolo)
+
+        # Qgis2threejs triangola in pianta (XY): una sezione perfettamente
+        # verticale ha area nulla in pianta e dà triangoli sbagliati. Si
+        # aggiunge un'inclinazione laterale minima, proporzionale alla quota
+        # relativa (0,2% = circa 0,1 gradi).
+        threejs = self.parameterAsEnum(parameters, self.VISUALIZZATORE, context) == 1
+        inclinazione = LEAN_THREEJS if threejs else 0.0
+        v_min = (extent.yMinimum() if asse_h == 0 else extent.xMinimum()) * esagerazione
+        px_, py_ = -hy, hx  # perpendicolare ad A-B in pianta
+        if threejs:
+            feedback.pushInfo(tr("log_lean").format(k=inclinazione * 100))
 
         # --- quota dal DTM (facoltativa) -----------------------------------
         z_base = 0.0
@@ -240,6 +317,7 @@ class Geological3DCrossSectionAlgorithm(QgsProcessingAlgorithm):
 
             ref_a = self._optional_double(parameters, self.REF_A, context)
             ref_b = self._optional_double(parameters, self.REF_B, context)
+            auto_a, auto_b = ref_a is None, ref_b is None
             if ref_a is None or ref_b is None:
                 vertici = []
                 for feat in layer.getFeatures():
@@ -263,6 +341,12 @@ class Geological3DCrossSectionAlgorithm(QgsProcessingAlgorithm):
                         raise QgsProcessingException(
                             tr("err_dtm_edge").format(nome="B")
                         )
+
+            for nome, valore, auto in (("A", ref_a, auto_a), ("B", ref_b, auto_b)):
+                if auto and abs(valore) > LIMITE_QUOTA_LOCALE:
+                    raise QgsProcessingException(
+                        tr("err_dtm_coords").format(nome=nome, valore=valore)
+                    )
 
             z_base, shear, mismatch = dtm_anchor(
                 z_a, z_b, ref_a, ref_b, esagerazione, cos_a, fit_b
@@ -290,6 +374,9 @@ class Geological3DCrossSectionAlgorithm(QgsProcessingAlgorithm):
             avanzamento = d + v * sin_a  # spostamento lungo la linea A-B
             X = ax + hx * avanzamento
             Y = ay + hy * avanzamento
+            lateral = (v - v_min) * inclinazione
+            X += px_ * lateral
+            Y += py_ * lateral
             Z = z_base + z_offset + v * cos_a + shear * frazione
             return X, Y, Z
 
@@ -299,7 +386,7 @@ class Geological3DCrossSectionAlgorithm(QgsProcessingAlgorithm):
             self.OUTPUT,
             context,
             fields,
-            QgsWkbTypes.Type.MultiPolygon25D,
+            tipo_out,
             crs,
         )
 
@@ -312,33 +399,49 @@ class Geological3DCrossSectionAlgorithm(QgsProcessingAlgorithm):
             if geom is None or geom.isEmpty():
                 continue
 
-            ring_groups = (
-                geom.asMultiPolygon() if geom.isMultipart() else [geom.asPolygon()]
-            )
+            if modo_geom == "poligoni":
+                geom = self._pulisci_poligoni(geom)
+                if geom is None or geom.isEmpty():
+                    continue
+                ring_groups = (
+                    geom.asMultiPolygon() if geom.isMultipart() else [geom.asPolygon()]
+                )
+                parti = []
+                for rings in ring_groups:
+                    new_rings = []
+                    for ring in rings:
+                        new_pts = []
+                        for pt in ring:
+                            X, Y, Z = ruota_punto(pt.x(), pt.y())
+                            new_pts.append(QgsPoint(X, Y, Z))
+                        new_rings.append(new_pts)
 
-            polys3d = []
-            for rings in ring_groups:
-                new_rings = []
-                for ring in rings:
+                    poly = QgsPolygon()
+                    poly.setExteriorRing(QgsLineString(new_rings[0]))
+                    for hole in new_rings[1:]:
+                        poly.addInteriorRing(QgsLineString(hole))
+                    parti.append(poly)
+                contenitore = QgsMultiPolygon
+            else:
+                linee = (
+                    geom.asMultiPolyline() if geom.isMultipart() else [geom.asPolyline()]
+                )
+                parti = []
+                for linea in linee:
                     new_pts = []
-                    for pt in ring:
+                    for pt in linea:
                         X, Y, Z = ruota_punto(pt.x(), pt.y())
                         new_pts.append(QgsPoint(X, Y, Z))
-                    new_rings.append(new_pts)
+                    parti.append(QgsLineString(new_pts))
+                contenitore = QgsMultiLineString
 
-                poly = QgsPolygon()
-                poly.setExteriorRing(QgsLineString(new_rings[0]))
-                for hole in new_rings[1:]:
-                    poly.addInteriorRing(QgsLineString(hole))
-                polys3d.append(poly)
-
-            if len(polys3d) == 1:
-                new_geom = QgsGeometry(polys3d[0])
+            if len(parti) == 1:
+                new_geom = QgsGeometry(parti[0])
             else:
-                mp = QgsMultiPolygon()
-                for p in polys3d:
-                    mp.addGeometry(p)
-                new_geom = QgsGeometry(mp)
+                multi = contenitore()
+                for parte in parti:
+                    multi.addGeometry(parte)
+                new_geom = QgsGeometry(multi)
 
             new_feat = QgsFeature(fields)
             new_feat.setAttributes(feat.attributes())
